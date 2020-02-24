@@ -1,6 +1,6 @@
 #include <valueListItem.h>
 
-ValueListItem::ValueListItem(std::string text, const std::vector<std::string> values, int defaultPos, const std::string data) : tsl::element::ListItem(text), m_values(values), m_curValue(defaultPos), extdata(data)
+ValueListItem::ValueListItem(std::string text, const std::vector<std::string> values, int defaultPos, const std::string data) : tsl::elm::ListItem(text), m_values(values), m_curValue(defaultPos), extdata(data)
 {
 }
 
@@ -8,28 +8,19 @@ ValueListItem::~ValueListItem()
 {
 }
 
-tsl::element::Element *ValueListItem::requestFocus(Element *oldFocus, FocusDirection direction)
+tsl::elm::Element *ValueListItem::requestFocus(Element *oldFocus, tsl::FocusDirection direction)
 {
   return ListItem::requestFocus(oldFocus, direction);
 }
 
-void ValueListItem::draw(tsl::Screen *screen, u16 x1, u16 y1)
+void ValueListItem::layout(u16 parentX, u16 parentY, u16 parentWidth, u16 parentHeight)
 {
-  const auto [x, y] = this->getPosition();
-  const auto [w, h] = this->getSize();
-
-  ListItem::draw(screen, x1, y1);
-  screen->drawString(m_values.at(m_curValue).c_str(), false, w - 70, y + 42, 19, a({0x5, 0xC, 0xA, 0xF}));
+  ListItem::layout(parentX, parentY, parentWidth, parentHeight);
 }
 
-void ValueListItem::layout()
+bool ValueListItem::onClick(u64 keys)
 {
-  ListItem::layout();
-}
-
-bool ValueListItem::onClick(s64 key)
-{
-  if (key & KEY_A)
+  if (keys & KEY_A)
   {
     m_curValue++;
     long int size = m_values.size();

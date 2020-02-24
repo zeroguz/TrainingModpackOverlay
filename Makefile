@@ -41,9 +41,9 @@ APP_TITLE	:=	Tesla Overlay Template
 
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source
+SOURCES		:=	source source/Elements
 DATA		:=	data
-INCLUDES	:=	include libs/libtesla/include
+INCLUDES	:=	include libs/libtesla/include include/Elements
 
 NO_ICON		:=  1
 

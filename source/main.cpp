@@ -1,4 +1,6 @@
 #include <switch.h>
+
+#define TESLA_INIT_IMPL
 #include <tesla.hpp>
 
 #include <Elements/ValueListItem.h>
@@ -33,7 +35,7 @@ struct DebugEventInfo
   DebugInfoAttachProcess info;
 };
 
-tsl::element::ToggleListItem *toggleItem = nullptr;
+tsl::elm::ToggleListItem *toggleItem = nullptr;
 std::vector<ValueListItem *> valueListItems;
 
 u64 pidSmash = 0;
@@ -117,17 +119,9 @@ public:
   }
 
   // Called on UI creation
-  virtual tsl::Element *createUI()
+  virtual tsl::elm::Element *createUI()
   {
-    auto *rootFrame = new tsl::element::Frame();
-
-    // A CustomDrawer element that allows for direct draw actions to the framebuffer
-
-    auto *header = new tsl::element::CustomDrawer(0, 0, 100, FB_WIDTH, [](u16 x, u16 y, tsl::Screen *screen) {
-      screen->drawString("UltimateTrainingModpack", false, 20, 50, 30, tsl::a(0xFFFF));
-      screen->drawString("Configurator", false, 20, 68, 15, tsl::a(0xFFFF));
-    });
-    rootFrame->addElement(header);
+    auto rootFrame = new tsl::elm::OverlayFrame("TrainingModPackOverlay", "v1.0.0");
 
     bool boot = 0;
 
@@ -139,10 +133,10 @@ public:
       f = nullptr;
     }
 
-    auto list = new tsl::element::List();
-    auto saltyBootItem = new tsl::element::ToggleListItem("SaltyNX boot2.flag", boot);
+    auto list = new tsl::elm::List();
+    auto saltyBootItem = new tsl::elm::ToggleListItem("SaltyNX boot2.flag", boot);
 
-    saltyBootItem->setStateChangeListener([](bool state) {
+    /*saltyBootItem->setStateChangeListener([](bool state) {
       if (state == 0)
       {
         std::remove("sdmc:/atmosphere/contents/0100000000534C56/flags/boot2.flag");
@@ -152,7 +146,7 @@ public:
         FILE *f = fopen("sdmc:/atmosphere/contents/0100000000534C56/flags/boot2.flag", "w");
         fclose(f);
       }
-    });
+    }); */
     Result rc;
     Handle debug;
 
@@ -167,7 +161,7 @@ public:
         {
           svcCloseHandle(debug);
 
-          toggleItem = new tsl::element::ToggleListItem("Hitbox Visualization", menu.HITBOX_VIS);
+          toggleItem = new tsl::elm::ToggleListItem("Hitbox Visualization", menu.HITBOX_VIS);
           list->addItem(toggleItem);
 
           ValueListItem *shieldItem = new ValueListItem("Shield Options", shield_items, menu.SHIELD_STATE, "shield");
@@ -194,38 +188,38 @@ public:
           list->addItem(diItem);
           valueListItems.push_back(diItem);
 
-          rootFrame->addElement(list);
+          rootFrame->setContent(list);
         }
         else
         {
-          tsl::element::CustomDrawer *warning = new tsl::element::CustomDrawer(0, 0, 100, FB_WIDTH, [](u16 x, u16 y, tsl::Screen *screen) {
-            screen->drawString("\uE150", false, 180, 250, 90, tsl::a(0xFFFF));
-            screen->drawString("Could not debug process memory", false, 110, 340, 25, tsl::a(0xFFFF));
+          tsl::elm::Element *warning = new tsl::elm::List::CustomDrawer([](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h) {
+            renderer->drawString("\uE150", false, 180, 250, 90, tsl::gfx::Color(255, 255, 255, 255));
+            renderer->drawString("Could not debug process memory", false, 110, 340, 25, tsl::gfx::Color(255, 255, 255, 255));
           });
 
-          rootFrame->addElement(warning);
+          rootFrame->setContent(warning);
         }
       }
       else
       {
-        tsl::element::CustomDrawer *warning = new tsl::element::CustomDrawer(0, 0, 100, FB_WIDTH, [](u16 x, u16 y, tsl::Screen *screen) {
-          screen->drawString("\uE150", false, 180, 400, 90, tsl::a(0xFFFF));
-          screen->drawString("Smash not running", false, 110, 500, 25, tsl::a(0xFFFF));
+        tsl::elm::Element *warning = new tsl::elm::List::CustomDrawer([](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h) {
+          renderer->drawString("\uE150", false, 180, 250, 90, tsl::gfx::Color(255, 255, 255, 255));
+          renderer->drawString("Smash not running.", false, 110, 340, 25, tsl::gfx::Color(255, 255, 255, 255));
         });
 
-        rootFrame->addElement(warning);
+        rootFrame->setContent(warning);
       }
     }
     else
     {
-      tsl::element::CustomDrawer *warning = new tsl::element::CustomDrawer(0, 0, 100, FB_WIDTH, [](u16 x, u16 y, tsl::Screen *screen) {
-        screen->drawString("\uE150", false, 180, 400, 90, tsl::a(0xFFFF));
-        screen->drawString("SaltyNX Not Running", false, 110, 500, 25, tsl::a(0xFFFF));
+      tsl::elm::Element *warning = new tsl::elm::List::CustomDrawer([](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h) {
+        renderer->drawString("\uE150", false, 180, 250, 90, tsl::gfx::Color(255, 255, 255, 255));
+        renderer->drawString("SaltyNX not running.", false, 110, 340, 25, tsl::gfx::Color(255, 255, 255, 255));
       });
 
-      rootFrame->addElement(warning);
+      rootFrame->setContent(warning);
     }
-    rootFrame->addElement(list);
+    rootFrame->setContent(list);
     return rootFrame;
   }
   // Called once per frame
@@ -235,95 +229,82 @@ public:
   }
 };
 
-class TrainingModpackOverlay : public tsl::Overlay
+class TrainingModpackOverlay : public tsl::Overlay<GuiMain>
 {
 public:
   TrainingModpackOverlay() {}
   ~TrainingModpackOverlay() {}
 
-  // Called once right after the overlay was launched
-  tsl::Gui *onSetup()
+  void onHide(tsl::Gui *gui)
   {
-    return new GuiMain();
+    applyChanges();
   }
+  void onShow(tsl::Gui *gui)
+  {
+    applyChanges();
+  }
+  void initServices()
+  {
+    smInitialize();
+    pminfoInitialize();
+    pmbmInitialize();
+    smExit();
 
-  // Called once immediately before exiting
-  void onDestroy()
-  {
-    // Exit your services here
-  }
-  void onOverlayHide(tsl::Gui *gui)
-  {
-    applyChanges();
-    gui->playOutroAnimation();
-  }
-  void onOverlayExit(tsl::Gui *gui)
-  {
-    applyChanges();
-    Overlay::onOverlayExit(gui);
+    pmdmntGetProcessId(&pidSmash, 0x01006A800016E000);
+
+    u64 pids[256];
+    u32 num_pids;
+    svcGetProcessList(&num_pids, pids, 256);
+
+    struct ProcessReport
+    {
+      uint64_t process_id;
+      uint32_t result;
+      uint64_t title_id;
+      char process_name[12];
+      uint32_t mmu_flags;
+    };
+
+    for (uint32_t i = 0; i < num_pids; i++)
+    {
+      Handle handle;
+      if (R_SUCCEEDED(svcDebugActiveProcess(&handle, pids[i])))
+      {
+        DebugEventInfo event;
+        while (R_SUCCEEDED(svcGetDebugEvent(reinterpret_cast<u8 *>(&event), handle)))
+        {
+          if (event.type == DebugEvent_AttachProcess)
+          {
+            auto name = event.info.name;
+            if (!strcmp("SaltySD", name))
+            {
+              pidSalty = pids[i];
+            }
+          }
+        }
+        svcCloseHandle(handle);
+      }
+    }
+
+    FILE *g = fopen("sdmc:/SaltySD/training_modpack_menu.conf", "r");
+    if (g)
+    {
+      fread(static_cast<void *>(&menu), sizeof(menu), 1, g);
+      fclose(g);
+    }
+    else
+    {
+      g = fopen("sdmc:/SaltySD/training_modpack_menu.conf", "w");
+      if (g)
+      {
+        fwrite(static_cast<void *>(&menu), sizeof(menu), 1, g);
+        fclose(g);
+      }
+    }
   }
 };
 
-// This function will get called once on startup to load the overlay
-tsl::Overlay *overlayLoad()
+int main(int argc, char **argv)
 {
-
-  smInitialize();
-  pminfoInitialize();
-  pmbmInitialize();
-  smExit();
-
-  pmdmntGetProcessId(&pidSmash, 0x01006A800016E000);
-
-  u64 pids[256];
-  u32 num_pids;
-  svcGetProcessList(&num_pids, pids, 256);
-
-  struct ProcessReport
-  {
-    uint64_t process_id;
-    uint32_t result;
-    uint64_t title_id;
-    char process_name[12];
-    uint32_t mmu_flags;
-  };
-
-  for (uint32_t i = 0; i < num_pids; i++)
-  {
-    Handle handle;
-    if (R_SUCCEEDED(svcDebugActiveProcess(&handle, pids[i])))
-    {
-      DebugEventInfo event;
-      while (R_SUCCEEDED(svcGetDebugEvent(reinterpret_cast<u8 *>(&event), handle)))
-      {
-        if (event.type == DebugEvent_AttachProcess)
-        {
-          auto name = event.info.name;
-          if (!strcmp("SaltySD", name))
-          {
-            pidSalty = pids[i];
-          }
-        }
-      }
-      svcCloseHandle(handle);
-    }
-  }
-
-  FILE *g = fopen("sdmc:/SaltySD/training_modpack_menu.conf", "r");
-  if (g)
-  {
-    fread(static_cast<void *>(&menu), sizeof(menu), 1, g);
-    fclose(g);
-  }
-  else
-  {
-    g = fopen("sdmc:/SaltySD/training_modpack_menu.conf", "w");
-    if (g)
-    {
-      fwrite(static_cast<void *>(&menu), sizeof(menu), 1, g);
-      fclose(g);
-    }
-  }
-
-  return new TrainingModpackOverlay();
+  return tsl::loop<TrainingModpackOverlay>(argc, argv);
 }

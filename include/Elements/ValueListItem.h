@@ -1,30 +1,31 @@
 #pragma once
 
-#include <overlay/elements/element.hpp>
-#include <overlay/elements/list_item.hpp>
+#include <tesla.hpp>
 
 #include <string>
 #include <functional>
 
-class ValueListItem : public tsl::element::ListItem
+class ValueListItem : public tsl::elm::ListItem
 {
 public:
   ValueListItem(std::string text, const std::vector<std::string> values, int defaultPos, const std::string extData);
   ~ValueListItem();
 
-  tsl::element::Element *requestFocus(Element *oldFocus, FocusDirection direction) override;
+  tsl::elm::Element *requestFocus(Element *oldFocus, tsl::FocusDirection direction) override;
 
-  void draw(tsl::Screen *screen, u16 x, u16 y) override;
-  void layout() override;
+  virtual void layout(u16 parentX, u16 parentY, u16 parentWidth, u16 parentHeight) override;
 
-  int getCurValue() { return this->m_curValue; }
+  int getCurValue()
+  {
+    return this->m_curValue;
+  }
   void setCurValue(int value) { this->m_curValue = value; }
 
   const std::string getExtData() { return this->extdata; }
 
   const std::vector<std::string> getValues() { return this->m_values; }
 
-  bool onClick(s64 key) override;
+  bool onClick(u64 keys) override;
 
   void setStateChangeListener(std::function<void(const std::vector<std::string>, int, std::string)> valueChangeListener) { this->m_valueChangeListener = valueChangeListener; }
 
